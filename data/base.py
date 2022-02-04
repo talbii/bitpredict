@@ -4,6 +4,10 @@ from typing import List, Dict
 class BitPredictException(Exception):
     pass
 
+class TimeInterval:
+    def __init__(self):
+        raise NotImplemented()
+
 class IAPIGetter(ABC):
     """
     Interface for retrieving coin prices from APIs.
@@ -18,7 +22,7 @@ class IAPIGetter(ABC):
         pass
 
     @abstractmethod
-    def get_interval_price(self, coin: str, currency: str = None) -> List[float]:
+    def get_interval_price(self, time_interval: TimeInterval, coin: str, currency: str = None) -> List[float]:
         pass
 
     @abstractmethod
@@ -29,14 +33,10 @@ class IAPIGetter(ABC):
     def get_interval_prices(self, coin: List[str], currency: str = None) -> Dict[str, List[float]]:
         pass
 
-class TimeInterval:
-    def __init__(self):
-        raise NotImplemented()
-
 class APIGetterExceptions:
-    class NoCurrency(BitPredictBaseException):
+    class NoCurrency(BitPredictException):
         pass
 
-    class InvalidRequest(BitPredictBaseException):
+    class InvalidRequest(BitPredictException):
         def __init__(self, coin: str, currency: str):
             super(coin, currency)
