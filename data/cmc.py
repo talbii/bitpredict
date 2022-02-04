@@ -1,42 +1,49 @@
-from .base import IAPIGetter
+from base import IAPIGetter, APIGetterExceptions
 from requests import Session
+from requests.exceptions import ConnectionError, TooManyRedirects, Timeout
 from typing import List, Dict
 import json
 
 class CMCAPI(IAPIGetter):
-    HEADERS = {
-            'Accepts' : 'application/json', 
-            'X-CMC_PRO_API_KEY': self.__api_key
-    }
+    def __init__(self, api_key: str, url: str, default_currency: str = None):
+        super(api_key, url, default_currency)
+        self.headers = {
+            'Accepts': 'applicaiton/json',
+            'X-CMC_PRO_API_KEY': self.api_key
+        }
+
+    def get_currency(self, currency: str) -> str:
+        """ Returns default_currency if currency is None """
+        if(currency is None):
+            if(self.default_currency is None) raise APIGetterExceptions.NoCurrency()
+            else:
+                return self.default_currency
+        return currency
 
     def get_latest_price(self, coin: str, currency: str = None) -> float:
+        currency = get_currency(currency)
+
         url_extra = "quotes/latest"
-        if(currency is None):
-            if(self.default_currency is None) raise IAPIGetter.NoCurrency()
-            else:
-                currency = self.default_currency
         parameters = {
           'convert' : currency.upper(),
           'symbol' : coin.upper(),
         }
 
         session = Session()
-        session.headers.update(headers)
+        session.headers.update(self.headers)
 
         try:
             response = session.get(url, params=parameters)
             data = json.loads(response.text)
             try:
-                return data['data'][coin_symbol.upper()]['quote'][currency_symbol.upper()]['price']
+                return data['data'][coin.upper()]['quote'][currency.upper()]['price']
             except KeyError:
-                print(f"Request Error: \n{data}")
-                raise IAPIGetter.InvalidRequest(coin, currency)
-        except (Exchange.ConnectionError, Exchange.TooManyRedirects, Exchange.Timeout) as e:
-            print(e)
-            
+                raise APIGetterExceptions.InvalidRequest(coin, currency)
+        except (ConnectionError, TooManyRedirects, Timeout) as e:
+            print("Error in connecting to the API. Perhaps the API is down?") 
             raise e
 
-    def get_interval_price(self, coin: str, currency: str = None) -> List[float]:
+    def get_interval_price(self, coin: str, currency: str = None, time_interval: TimeInterval) -> List[float]:
         pass
 
     def get_latest_prices(self, coins: List[str], currency: str = None) -> Dict[str, float]:
