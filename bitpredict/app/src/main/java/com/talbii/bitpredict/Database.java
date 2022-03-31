@@ -21,8 +21,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Database {
     public final String TAG = "Database";
@@ -78,6 +82,22 @@ public class Database {
         return c;
     }
 
+    public List<CoinStruct> getCoins(List<String> l) {
+        var res = Collections.synchronizedList(new ArrayList<CoinStruct>(l.size()));
+        var pool = Executors.newCachedThreadPool();
+        for(var coin : l) {
+            if(!availableCoins.contains(coin)) continue;
+            pool.execute(new GetCoinRunnable(db, coin, res));
+        }
+        pool.shutdown();
+        try {
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return res;
+    }
+
     private static class GetCoinsRunnable implements Runnable {
         private ArrayList<String> a;
 
@@ -105,10 +125,18 @@ public class Database {
         private final FirebaseFirestore fs;
         private final String s;
 
+        private List<CoinStruct> res;
+
         public GetCoinRunnable(FirebaseFirestore f, String symbol) {
             c = new CoinStruct();
             fs = f;
             s = symbol;
+            res = null;
+        }
+
+        public GetCoinRunnable(FirebaseFirestore f, String symbol, List<CoinStruct> writeTo) {
+            this(f, symbol);
+            res = writeTo;
         }
 
         @Override
@@ -120,6 +148,11 @@ public class Database {
                     c.name = (String) ds.get("name");
                     c.latest = (double) ds.get("latest");
                     c.historical = (DocumentReference) ds.get("historical");
+                    c.iconref = FirebaseStorage.getInstance().getReference().child("ic").child(s + ".png");
+                }
+
+                if(res != null) {
+                    res.add(c);
                 }
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
