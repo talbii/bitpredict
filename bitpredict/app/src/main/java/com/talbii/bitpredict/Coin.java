@@ -13,14 +13,11 @@ public class Coin {
     TextView name;
     TextView price;
 
-    private CoinStruct c;
-
     void bind(CoinStruct c) {
-        this.c = c;
         Glide.with(icon.getContext())
-             .load(this.c.iconref)
+             .load(c.iconref)
              .into(icon);
-        name.setText(this.c.name);
-        price.setText(String.valueOf(this.c.latest));
+        name.setText(c.name);
+        price.setText(Formatting.formatDouble(c.latest));
     }
 }
