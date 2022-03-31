@@ -9,7 +9,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.db.williamchart.data.configuration.LineChartConfiguration;
 import com.db.williamchart.view.LineChartView;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
@@ -17,7 +16,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import kotlin.Pair;
@@ -25,7 +23,7 @@ import kotlin.Pair;
 public class CoinActivity extends AppCompatActivity {
 
     @SuppressLint("DefaultLocale")
-    private String pprint(double d) {
+    private String formatDouble(double d) {
         assert d > 0;
         var magnitude = Math.log10(d);
         if(magnitude < -5) return String.format("%." + magnitude + "f", d);
@@ -60,7 +58,7 @@ public class CoinActivity extends AppCompatActivity {
                 .into(image);
 
         ((TextView) t.findViewWithTag("coin_name")).setText(i.getStringExtra("name"));
-        ((TextView) t.findViewWithTag("coin_quote_latest")).setText(pprint(i.getDoubleExtra("latest_quote", -1)));
+        ((TextView) t.findViewWithTag("coin_quote_latest")).setText(formatDouble(i.getDoubleExtra("latest_quote", -1)));
 
         var lineChart = (LineChartView) findViewById(R.id.lineChart);
         final var l = getHistoricalData(i.getStringExtra("historical"));
