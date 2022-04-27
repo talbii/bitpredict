@@ -14,11 +14,12 @@ public class RecallableTimer {
 
     public void schedule(TimerTask task, long delay, long period) {
         if(isCancelled) t = new Timer();
+        isCancelled = false;
         t.schedule(task, delay, period);
     }
 
     public void cancel() {
-        t.cancel();
+        if(!isCancelled) t.cancel();
         isCancelled = true;
     }
 }
