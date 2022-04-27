@@ -61,19 +61,6 @@ public class CoinActivity extends AppCompatActivity {
         return null;
     }
 
-    private static List<Pair<Double, Double>> sliceToDoubles(List<Double> l, int maxItems) {
-        if(maxItems > l.size()) maxItems = l.size();
-        var sliced = new ArrayList<Pair<Double,Double>>();
-        var i = (double)l.size();
-        var lsliced = l.subList(l.size() - maxItems, l.size());
-
-        for(var d : lsliced) sliced.add(new Pair<>(i++,d));
-        Log.d("Slice", ""+sliced.size());
-        assert sliced.size() == maxItems;
-
-       return sliced;
-    }
-
     private Future<BigDecimal> requestPredictionForSlice(List<Double> l, int sliceSize) {
         sliceSize = Math.min(l.size(), sliceSize);
         var slicedList = l.subList(l.size() - sliceSize, l.size());
@@ -82,14 +69,12 @@ public class CoinActivity extends AppCompatActivity {
         var i = (double)l.size();
         for (var d : slicedList) pairList.add(new Pair<>(i++, d));
 
-        var future = executor.submit(new Callable<BigDecimal>() {
+        return executor.submit(new Callable<BigDecimal>() {
             @Override
             public BigDecimal call() {
                 return Polynomial.neville_interpolation(pairList, l.size() + 1);
             }
         });
-
-        return future;
     }
 
     @Override
@@ -100,7 +85,7 @@ public class CoinActivity extends AppCompatActivity {
         final var l = getHistoricalData(i.getStringExtra("historical"));
         assert l != null;
 
-        var neville = requestPredictionForSlice(l, 20);
+        var neville = requestPredictionForSlice(l, 15);
 
 
         final var t = findViewById(R.id.activity_coin_root);
