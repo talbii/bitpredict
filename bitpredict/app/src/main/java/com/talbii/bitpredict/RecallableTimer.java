@@ -19,7 +19,7 @@ public class RecallableTimer {
     }
 
     public void cancel() {
-        t.cancel();
+        if(!isCancelled) t.cancel();
         isCancelled = true;
     }
 }
