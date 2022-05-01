@@ -60,20 +60,7 @@ public class CoinActivity extends AppCompatActivity {
 
         return null;
     }
-
-    private static List<Pair<Double, Double>> sliceToDoubles(List<Double> l, int maxItems) {
-        if(maxItems > l.size()) maxItems = l.size();
-        var sliced = new ArrayList<Pair<Double,Double>>();
-        var i = (double)l.size();
-        var lsliced = l.subList(l.size() - maxItems, l.size());
-
-        for(var d : lsliced) sliced.add(new Pair<>(i++,d));
-        Log.d("Slice", ""+sliced.size());
-        assert sliced.size() == maxItems;
-
-       return sliced;
-    }
-
+  
     private Future<BigDecimal> requestPredictionForSlice(List<Double> l, int sliceSize) {
         sliceSize = Math.min(l.size(), sliceSize);
         var slicedList = l.subList(l.size() - sliceSize, l.size());
@@ -90,6 +77,29 @@ public class CoinActivity extends AppCompatActivity {
         });
 
         return future;
+
+    }
+
+    private void displayHistoricalData(@NonNull final String s) {
+        var lineChart = (LineChartView) findViewById(R.id.lineChart);
+        var l = getHistoricalData(s);
+        assert l != null;
+  
+        var nevillep = requestPredictionForSlice(l, 15);
+
+        final var lp = new ArrayList<Pair<String, Float>>();
+        for (var x : l) lp.add(new Pair<>("label", x.floatValue()));
+
+        lineChart.getAnimation().setDuration(1000L);
+        lineChart.animate(lp);
+  
+        var nevilleTextView = (TextView)findViewById(R.id.neville_prediction);
+
+        try {
+            nevilleTextView.setText(neville.get().toString());
+        } catch (ExecutionException | InterruptedException e) {
+            nevilleTextView.setText("Failed to predict :-(");
+        }
     }
 
     @Override
@@ -107,7 +117,7 @@ public class CoinActivity extends AppCompatActivity {
 
 
 
-        /*Load Symbol*/
+        /*Load Symbol - this is probably cached so we can proceed with the request.*/
         var image = (ImageView) t.findViewWithTag("coin_symbol");
         Glide.with(this)
                 .load(FirebaseStorage.getInstance().getReference(i.getStringExtra("symbol")))
@@ -115,21 +125,9 @@ public class CoinActivity extends AppCompatActivity {
 
         ((TextView) t.findViewWithTag("coin_name")).setText(i.getStringExtra("name"));
         ((TextView) t.findViewWithTag("coin_quote_latest")).setText(Formatting.formatDouble(i.getDoubleExtra("latest_quote", -1)));
-
-        var lineChart = (LineChartView) findViewById(R.id.lineChart);
-
-        final var lp = new ArrayList<Pair<String, Float>>();
-        for (var x : l) lp.add(new Pair<>("label", x.floatValue()));
-
-        lineChart.getAnimation().setDuration(1000L);
-        lineChart.animate(lp);
-
-        var nevilleTextView = (TextView)findViewById(R.id.neville_prediction);
-
-        try {
-            nevilleTextView.setText(neville.get().toString());
-        } catch (ExecutionException | InterruptedException e) {
-            nevilleTextView.setText("Failed to predict :-(");
+        if(MainActivity.currentNetworkState) displayHistoricalData(i.getStringExtra("historical"));
+        else {
+            Log.d("CoinActivity", "No internet; skipping request of historical for now.");
         }
 
     }
