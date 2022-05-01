@@ -50,6 +50,24 @@ public class CoinActivity extends AppCompatActivity {
         return null;
     }
 
+    private void displayLineChart(@NonNull final String s) {
+        var lineChart = (LineChartView) findViewById(R.id.lineChart);
+        var l = getHistoricalData(s);
+        assert l != null;
+
+        final var lp = new ArrayList<Pair<String, Float>>();
+        for(var j = 0; j < l.size(); j++) {
+            var res = 0f;
+            var o = (Object) l.get(j);
+            if(o instanceof Long) res = ((Long) o).floatValue();
+            else res = ((Double) o).floatValue();
+            lp.add(new Pair<>("label"+j, res));
+        }
+
+        lineChart.getAnimation().setDuration(1000L);
+        lineChart.animate(lp);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,7 +77,7 @@ public class CoinActivity extends AppCompatActivity {
 
         var i = getIntent();
 
-        /*Load Symbol*/
+        /*Load Symbol - this is probably cached so we can proceed with the request.*/
         var image = (ImageView) t.findViewWithTag("coin_symbol");
         Glide.with(this)
                 .load(FirebaseStorage.getInstance().getReference(i.getStringExtra("symbol")))
@@ -67,15 +85,11 @@ public class CoinActivity extends AppCompatActivity {
 
         ((TextView) t.findViewWithTag("coin_name")).setText(i.getStringExtra("name"));
         ((TextView) t.findViewWithTag("coin_quote_latest")).setText(Formatting.formatDouble(i.getDoubleExtra("latest_quote", -1)));
-
-        var lineChart = (LineChartView) findViewById(R.id.lineChart);
-        final var l = getHistoricalData(i.getStringExtra("historical"));
-        final var lp = new ArrayList<Pair<String, Float>>();
-        for(var j = 0; j < l.size(); j++) {
-            lp.add(new Pair<>("label"+j, l.get(j).floatValue()));
+        if(MainActivity.currentNetworkState) displayLineChart(i.getStringExtra("historical"));
+        else {
+            Log.d("CoinActivity", "No internet; skipping request of historical for now.");
         }
 
-        lineChart.getAnimation().setDuration(1000L);
-        lineChart.animate(lp);
+
     }
 }
