@@ -5,17 +5,18 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+// // Create and Deploy Your First Cloud Functions
+// // https://firebase.google.com/docs/functions/write-firebase-functions
+//
+// exports.helloWorld = functions.https.onRequest((request, response) => {
+//   functions.logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// });
+const yf2 = require('yahoo-finance2').default; // NOTE the .default
+
 const { symbol } = require("./symbol.js");
-var yf = require('yahoo-finance');
 
-async function get_latest_quote(s) {
-    let data = await yf.quote({
-        symbol: s,
-        modules: ["price"],
-    });
-
-    return data.price.regularMarketPrice;
-}
+let to_yf_symbol = ((s) => s.toUpperCase() + "-USD");
 
 exports.update_coins = functions.pubsub.schedule('every 5 minutes').onRun((context) => {
     const fs = admin.firestore();
@@ -25,56 +26,29 @@ exports.update_coins = functions.pubsub.schedule('every 5 minutes').onRun((conte
         await fs.collection("data").listDocuments().then(docs => {
         return fs.getAll(...docs);
     }).then(async snapshots => {
-        for(let ds of snapshots) { 
-            // for each document snapshot
-            if(ds.exists) { // safe check; this should never enter
-                // get the data from the snapshot and process it
-                let data = ds.data();
-                functions.logger.info(`Got data of ${ds.id}: ${JSON.stringify(data)}`);
-                data.historical.push(data.latest);
-                functions.logger.info(`Symbol: ${symbol.get(ds.id)}`);
-                let quote = await get_latest_quote(symbol.get(ds.id)).then(result => {
-                    functions.logger.info(`Finished resolve of yf for ${ds.id}: ${result}`)
-                    data.latest = result;
-                    functions.logger.info(`Setting data of ${ds.id}: ${JSON.stringify(data)}`);
-                    batch.update(ds.ref, data);
-                });
-            } else {
-                functions.logger.error(`Missing document: '${ds.id}'. This should never enter.`);
-            }
-        }
-
-        return null;
-    });
-        return batch.commit();
-   })(); 
-});
-
-exports.man_update_coins = functions.https.onRequest(async (req, res) => {
-    const fs = admin.firestore();
-    let batch = fs.batch();
-    return (async () => {
-        await fs.collection("data").listDocuments().then(docs => {
-        return fs.getAll(...docs);
-    }).then(async snapshots => {
+        let proms = [];
         for(let ds of snapshots) {
             if(ds.exists) {
                 let data = ds.data();
-                functions.logger.info(`Got data of ${ds.id}: ${JSON.stringify(data)}`);
-                data.historical.push(data.latest);
-                functions.logger.info(`Symbol: ${symbol.get(ds.id)}`);
-                let quote = await get_latest_quote(symbol.get(ds.id)).then(result => {
-                    functions.logger.info(`finished resolve of yf: ${result}`)
-                    data.latest = result;
-                    functions.logger.info(`Setting data of ${ds.id}: ${JSON.stringify(data)}`);
+                proms.push(yf2.quote(to_yf_symbol(ds.id)).then((latest_quote) => {
+                    let lq = latest_quote.regularMarketPrice;
+                    functions.logger.info(`For coin ${data.name}: ${data.latest} ->  ${lq}`);
+                    let old_quote = data.latest;
+                    proms.push(fs.getAll(data.historical).then(res => {
+                        let hds = res[0];
+                        functions.logger.info(`Got historical of ${hds.id}!`);
+                        let hdata = hds.data();
+                        hdata.historical.push(old_quote);
+                        batch.update(hds.ref, hdata);
+                    }));
+                    data.latest = lq;
                     batch.update(ds.ref, data);
-                });
+                }));
             } else {
                 functions.logger.error(`Missing document: '${ds.id}'. This should never enter.`);
             }
         }
-
-        return null;
+        return Promise.all(proms).then(r => batch.commit());
     });
-        return batch.commit();
-}); });
+   })(); 
+});
