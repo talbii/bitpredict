@@ -13,15 +13,16 @@ admin.initializeApp();
 //   response.send("Hello from Firebase!");
 // });
 const yf2 = require('yahoo-finance2').default; // NOTE the .default
+
 const { symbol } = require("./symbol.js");
 
 let to_yf_symbol = ((s) => s.toUpperCase() + "-USD");
-
 
 exports.update_coins = functions.pubsub.schedule('every 5 minutes').onRun((context) => {
     const fs = admin.firestore();
     let batch = fs.batch();
     return (async () => {
+        // get all documents and read them
         await fs.collection("data").listDocuments().then(docs => {
         return fs.getAll(...docs);
     }).then(async snapshots => {
