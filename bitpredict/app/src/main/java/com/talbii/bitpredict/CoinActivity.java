@@ -1,9 +1,16 @@
 package com.talbii.bitpredict;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 import com.bumptech.glide.Glide;
@@ -25,6 +32,9 @@ import kotlin.Pair;
 public class CoinActivity extends AppCompatActivity {
     private final FirebaseFirestore fs = FirebaseFirestore.getInstance();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ArrayList<Double> historical;
+    private SharedPreferences sp;
+    private int N;
 
     private ArrayList<Double> getHistoricalData(@NonNull final String s) {
         Log.d("CoinActivity/getHistoricalData", "Got Path: " + s);
@@ -82,13 +92,13 @@ public class CoinActivity extends AppCompatActivity {
 
     private void displayHistoricalData(@NonNull final String s) {
         var lineChart = (LineChartView) findViewById(R.id.lineChart);
-        var l = getHistoricalData(s);
-        assert l != null;
+        historical = getHistoricalData(s);
+        assert historical != null;
   
-        var nevillep = requestPredictionForSlice(l, 15);
+        var nevillep = requestPredictionForSlice(historical, N);
 
         final var lp = new ArrayList<Pair<String, Float>>();
-        for (var x : l) lp.add(new Pair<>("label", x.floatValue()));
+        for (var x : historical) lp.add(new Pair<>("label", x.floatValue()));
 
         lineChart.getAnimation().setDuration(1000L);
         lineChart.animate(lp);
@@ -96,7 +106,7 @@ public class CoinActivity extends AppCompatActivity {
         var nevilleTextView = (TextView)findViewById(R.id.neville_prediction);
 
         try {
-            nevilleTextView.setText(neville.get().toString());
+            nevilleTextView.setText(nevillep.get().toString());
         } catch (ExecutionException | InterruptedException e) {
             nevilleTextView.setText("Failed to predict :-(");
         }
@@ -107,15 +117,13 @@ public class CoinActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_coin);
         var i = getIntent();
+        sp = getSharedPreferences("neville_preferences", Context.MODE_PRIVATE);
         final var l = getHistoricalData(i.getStringExtra("historical"));
         assert l != null;
 
-        var neville = requestPredictionForSlice(l, 20);
-
-
         final var t = findViewById(R.id.activity_coin_root);
 
-
+        N = sp.getInt("neville_N",15);
 
         /*Load Symbol - this is probably cached so we can proceed with the request.*/
         var image = (ImageView) t.findViewWithTag("coin_symbol");
@@ -129,6 +137,52 @@ public class CoinActivity extends AppCompatActivity {
         else {
             Log.d("CoinActivity", "No internet; skipping request of historical for now.");
         }
+    }
 
+    @Override
+    protected void onDestroy() {
+        var edit = sp.edit();
+        edit.putInt("neville_N", N);
+        edit.apply();
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        var inflater = getMenuInflater();
+        inflater.inflate(R.menu.coin_activity_menu, menu);
+        return true;
+    }
+
+    private void evaluateNeville() {
+        var prediction = requestPredictionForSlice(historical, N);
+
+        var nevilleTextView = (TextView)findViewById(R.id.neville_prediction);
+
+        try {
+            Log.d("CoinActivity/evaluateNeville", "Updating nevilleTextView");
+            nevilleTextView.setText(prediction.get().toString());
+            Log.d("CoinActivity/evaluateNeville", "New value: " + prediction.get().toString());
+         } catch (ExecutionException | InterruptedException e) {
+            nevilleTextView.setText("Failed to predict :-(");
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.select_neville_degree:
+                var builder= new AlertDialog.Builder(this);
+                builder.setTitle("Select N:")
+                        .setItems(R.array.n_array, (dialogInterface, i) -> {
+                            N = i + 5;
+                            evaluateNeville();
+                        })
+                .create().show();
+                break;
+            default:
+                Log.d("CoinActivity/onOptionsItemSelected", "this should not enter!");
+        }
+        return true;
     }
 }
