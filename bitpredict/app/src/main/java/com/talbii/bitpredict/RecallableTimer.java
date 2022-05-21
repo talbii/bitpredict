@@ -5,6 +5,7 @@ import java.util.TimerTask;
 
 public class RecallableTimer {
     Timer t;
+    TimerTask task;
     boolean isCancelled;
 
     public RecallableTimer() {
@@ -16,10 +17,11 @@ public class RecallableTimer {
         if(isCancelled) t = new Timer();
         isCancelled = false;
         t.schedule(task, delay, period);
+        this.task = task;
     }
 
     public void cancel() {
-        if(!isCancelled) t.cancel();
+        t.cancel();
         isCancelled = true;
     }
 }

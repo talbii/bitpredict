@@ -1,6 +1,7 @@
 package com.talbii.bitpredict;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -9,9 +10,11 @@ import androidx.annotation.NonNull;
 import java.util.List;
 
 public class MainRecyclerAdapter extends RecyclerAdapter<CoinStruct> {
+    private final Handler handler;
 
-    public MainRecyclerAdapter(List<CoinStruct> list) {
+    public MainRecyclerAdapter(List<CoinStruct> list, Handler handler) {
         super(list);
+        this.handler = handler;
     }
 
     @Override
@@ -48,14 +51,16 @@ public class MainRecyclerAdapter extends RecyclerAdapter<CoinStruct> {
         super.onBindViewHolder(viewHolder, position);
         var data = list.get(position);
         viewHolder.itemView.setOnClickListener(view -> {
-            var c = view.getContext();
-            var intent = new Intent(c, CoinActivity.class);
-            intent.putExtra("name", data.name);
-            intent.putExtra("symbol", data.iconref.getPath());
-            intent.putExtra("historical", data.historical.getPath());
-            intent.putExtra("latest_quote", data.latest);
+            if(MainActivity.currentNetworkState) {
+                var c = view.getContext();
+                var intent = new Intent(c, CoinActivity.class);
+                intent.putExtra("name", data.name);
+                intent.putExtra("symbol", data.iconref.getPath());
+                intent.putExtra("historical", data.historical.getPath());
+                intent.putExtra("latest_quote", data.latest);
 
-            c.startActivity(intent);
+                c.startActivity(intent);
+            } else handler.sendEmptyMessage(MainActivityConstants.MESSAGE_NO_INTENT);
         });
     }
 }

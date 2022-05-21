@@ -42,7 +42,7 @@ public class Polynomial {
                 var numerator = first_part.subtract(second_part);
                 var denominator = BigDecimal.valueOf(x_i - x_j);
 
-                poly[i][j] = numerator.divide(denominator,2,BigDecimal.ROUND_HALF_UP);
+                poly[i][j] = numerator.divide(denominator,10,BigDecimal.ROUND_HALF_EVEN);
                 //poly[i][j] = ((x - x_j) * poly[i][j-1] - (x - x_i) * poly[i+1][j])/(x_i - x_j);
                 /*if(Double.isNaN(poly[i][j])) {
                     final String TAG = "Polynomial/neville_interpolation";
