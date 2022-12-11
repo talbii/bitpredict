@@ -27,8 +27,8 @@ Instead of mindlessly attempting to fit a polynomial to many past points, we ins
 
 The calculation itself is done by sampling the history, and checking when we had the following pattern(s):
 
-- The price increased by $a \%$
-- The price decreased by $a \%$
+- The price increased by $a$%
+- The price decreased by $a$%
 - The price did not change ( $\pm \varepsilon$ )
 
 Afterwards, guessing the next price is a matter of probability. 
