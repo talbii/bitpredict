@@ -24,7 +24,6 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements BroadcastCompatActivity{
     private static final long MINUTE = 60 * 1000;
     private RecyclerView rv;
-    private Database d;
     private BroadcastReceiver checkNetworkStatus;
     private List<CoinStruct> l;
     private MainRecyclerAdapter ra;
@@ -49,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         });
         spinnerFunctions.add(Comparator.comparingDouble(x -> x.latest));
         spinnerFunctions.add((x, y) -> Double.compare(y.latest, x.latest));
-
         return spinnerFunctions;
     }
 
@@ -64,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         cl = findViewById(R.id.mainCoordinatorLayout);
-        d = new Database();
 
         checkNetworkStatus = new NetworkBroadcast(this);
         currentNetworkState = true;
@@ -76,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         rv = (RecyclerView) findViewById(R.id.rview);
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(ra);
+
+        var res = Database.getCoin("wow!");
 
         var spinnerValues = ArrayAdapter.createFromResource(this,
                 R.array.sort_by_options, android.R.layout.simple_spinner_item);
@@ -128,7 +127,6 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         currentNetworkState = b;
         switch(status) {
             case NetworkBroadcast.NO_NETWORK:
-                //Toast.makeText(this, "Internet appears to be down.", Toast.LENGTH_LONG).show();
                 Log.d("MainActivity/network", "Network is down");
                 makeDismissSnackbar(cl, R.string.no_internet, Snackbar.LENGTH_INDEFINITE);
                 timer.cancel();
@@ -141,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
                     public void run() {
                         Log.d("MainActivity/TimerTask", "Updating coin prices!");
                         l.clear();
-                        l.addAll(d.getCoins(new ArrayList<>(Database.availableCoins)));
+                        l.addAll(Database.getCoins(new ArrayList<>(Database.availableCoins)));
                         handler.sendEmptyMessage(MainActivityConstants.MESSAGE_NEW_DATA);
                     }
                 }, 0L, 5 * MINUTE);

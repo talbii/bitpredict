@@ -10,7 +10,7 @@ public class Coin {
     TextView name;
     TextView price;
 
-    void bind(CoinStruct c) {
+    public void bind(CoinStruct c) {
         Glide.with(icon.getContext())
              .load(c.iconref)
              .into(icon);

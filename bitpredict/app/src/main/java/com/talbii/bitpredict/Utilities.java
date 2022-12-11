@@ -2,7 +2,6 @@ package com.talbii.bitpredict;
 
 import android.annotation.SuppressLint;
 import android.util.Log;
-
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
@@ -28,14 +27,12 @@ public class Utilities {
     /*
     * Returns the log (log_e) of x.*/
     public static BigDecimal log(BigDecimal x) {
-        // todo: make this more accurate
         return new BigDecimal(Math.log(x.doubleValue()));
     }
 
     /*
     * Returns the value a ^ b.*/
     public static BigDecimal pow(BigDecimal a, BigDecimal b) {
-        // todo: make this more accurate
         return new BigDecimal(Math.pow(a.doubleValue(), b.doubleValue()));
     }
 

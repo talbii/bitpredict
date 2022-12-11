@@ -1,17 +1,11 @@
 package com.talbii.bitpredict;
 
-import android.util.Log;
-
+import static com.talbii.bitpredict.Utilities.d;
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 import kotlin.Pair;
 
 public class Polynomial {
-    /*
-    * Given a list of points (x_i, y_i) ∈ X * Y, and a point x_j,
-    * */
-
     /**
      *  Using Neville's Algorithm (https://en.wikipedia.org/wiki/Neville%27s_algorithm), interpolate the points
      *  in the list data.
@@ -25,7 +19,7 @@ public class Polynomial {
 
         for(var i = 0; i < n; i++) for(var j = 0; j < n; j++) poly[i][j] = BigDecimal.ZERO;
 
-        for(var i = 0; i < n; i++) poly[i][i] = BigDecimal.valueOf(data.get(i).getSecond());
+        for(var i = 0; i < n; i++) poly[i][i] = d(data.get(i).getSecond());
 
         for(var k = 1; k < n; k++) {
             int i = 0, j = i + k;
@@ -44,19 +38,10 @@ public class Polynomial {
 
                 poly[i][j] = numerator.divide(denominator,10,BigDecimal.ROUND_HALF_EVEN);
                 //poly[i][j] = ((x - x_j) * poly[i][j-1] - (x - x_i) * poly[i+1][j])/(x_i - x_j);
-                /*if(Double.isNaN(poly[i][j])) {
-                    final String TAG = "Polynomial/neville_interpolation";
-                    Log.d(TAG, "NaN at " + i + "," + j);
-                    Log.d(TAG, "x_i=" + x_i + " x_j=" + x_j);
-                    Log.d(TAG, "poly[i][j-1]=" + poly[i][j-1] + " poly[i+1][j]=" + poly[i+1][j]);
-                    assert !Double.isNaN(poly[i][j]);
-                }*/
                 i++; j++;
             }
         }
 
         return poly[0][n - 1];
     }
-
-
 }

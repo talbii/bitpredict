@@ -1,38 +1,25 @@
 package com.talbii.bitpredict;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 import androidx.annotation.NonNull;
-
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
-import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Database {
-    public final String TAG = "Database";
-    private static final long MEGABYTE = 1024 * 1024;
-    private final FirebaseFirestore db;
-    private final StorageReference icons;
+    private static final FirebaseFirestore db;
+    private static final StorageReference icons;
     public final static Set<String> availableCoins;
     static {
         GetCoinsRunnable g = new GetCoinsRunnable();
@@ -46,9 +33,7 @@ public class Database {
 
         availableCoins = Collections.unmodifiableSet(new HashSet<>(g.getAvailableCoins()));
         Log.d("Database/static_block", "Got list of available coins: " + availableCoins);
-    }
 
-    public Database () {
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                 .setPersistenceEnabled(true)
                 .build();
@@ -57,9 +42,11 @@ public class Database {
         icons = FirebaseStorage.getInstance().getReference().child("ic");
     }
 
+    private Database() {}
+
     /*Gets the historical and latest prices of coin s, and places them in c.
     *  Assumes s is in availableCoins.*/
-    private CoinStruct getQuote(@NonNull String s) {
+    private static CoinStruct getQuote(@NonNull String s) {
 
         GetCoinRunnable g = new GetCoinRunnable(db, s);
         Thread t = new Thread(g);
@@ -73,16 +60,15 @@ public class Database {
         return g.getCoinStruct();
     }
 
-    public CoinStruct getCoin(String s) {
+    public static CoinStruct getCoin(@NonNull String s) {
         if(!availableCoins.contains(s)) return null;
 
         CoinStruct c = getQuote(s);
         c.iconref = icons.child(s + ".png");
-        //c.icon = getIcon(s, c.iconref);
         return c;
     }
 
-    public List<CoinStruct> getCoins(List<String> l) {
+    public static List<CoinStruct> getCoins(List<String> l) {
         var res = Collections.synchronizedList(new ArrayList<CoinStruct>(l.size()));
         var pool = Executors.newCachedThreadPool();
         for(var coin : l) {
