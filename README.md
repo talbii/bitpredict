@@ -10,7 +10,7 @@ Due to lack of time, and the fact that Java isn't a great language for data proc
 
 Given $n$ points $(t_1, p_1) \ldots (t_n, p_n) \in \mathbb{R}^2$, where each points represents the price of a coin at timestamp $t_i$ (to be precise, the timestamp is given as an offset from a known timestamp, e.g., the first of January 2022), we fit a polynomial $p$ of degree $n + 1$ (there is only one such polynomial) using an algorithm by Neville.
 
-After doing that, we are left with a polynomial $p \in \mathbb{R}_{n+1}[x]$. We compute the value of this polynomial in the "future" ($t_n + \text{offset}$). The result is our prediction.
+After doing that, we are left with a polynomial $p \in \mathbb{R}_{n+1}[x]$. We compute the value of this polynomial in the "future" ( $t_n + \text{offset}$ ). The result is our prediction.
 
 Because Neville's algorithm does $O(n^3)$ floating point operations, and the fact that this is runninng locally, on your phone, it is possible to tune the value of $n$ - i.e., how far back to the past should we look.
 
@@ -23,12 +23,12 @@ Instead of mindlessly attempting to fit a polynomial to many past points, we ins
 
 **Problem:** the price does not depend only on the current price.
 
-*Solution:* we look back far enough, process that data and answer accordingly. Because this algorithm takes little time ($\Theta(n)$), we are actually able to process a large chunk of data (e.g., the last week of prices, with 5 minute intervals) and answer a fairly confident answer.
+*Solution:* we look back far enough, process that data and answer accordingly. Because this algorithm takes little time ( $\Theta(n)$ ), we are actually able to process a large chunk of data (e.g., the last week of prices, with 5 minute intervals) and answer a fairly confident answer.
 
 The calculation itself is done by sampling the history, and checking when we had the following pattern(s):
 
 - The price increased by $a \%$
 - The price decreased by $a \%$
-- The price did not change ($\pm \varepsilon$)
+- The price did not change ( $\pm \varepsilon$ )
 
 Afterwards, guessing the next price is a matter of probability. 
