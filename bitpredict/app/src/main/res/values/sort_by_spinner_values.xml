@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--"Name, Asc.", "Name, Desc.", "Price, Asc.", "Price, Desc."-->
+    <string-array name="sort_by_options">
+        <item>Name, Asc.</item>
+        <item>Name, Desc.</item>
+        <item>Price, Asc.</item>
+        <item>Price, Desc.</item>
+    </string-array>
+</resources>

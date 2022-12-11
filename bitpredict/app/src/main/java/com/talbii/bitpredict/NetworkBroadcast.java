@@ -8,7 +8,6 @@ import android.net.ConnectivityManager;
 public class NetworkBroadcast extends BroadcastReceiver {
     public static final int NO_NETWORK = 0;
     public static final int YES_NETWORK = 1;
-    public static final String TAG = "NetworkBroadcast";
     private final BroadcastCompatActivity main;
 
     public NetworkBroadcast(BroadcastCompatActivity main) {

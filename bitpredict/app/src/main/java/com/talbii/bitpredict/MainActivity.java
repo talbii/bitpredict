@@ -24,31 +24,21 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements BroadcastCompatActivity{
     private static final long MINUTE = 60 * 1000;
     private RecyclerView rv;
-    private Database d;
     private BroadcastReceiver checkNetworkStatus;
     private List<CoinStruct> l;
     private MainRecyclerAdapter ra;
     static boolean currentNetworkState;
     private boolean firstTime;
     private CoordinatorLayout cl;
-    private final Handler handler = new Handler() {
+    public final Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            ra.notifyDataSetChanged();
+            if(msg.what == MainActivityConstants.MESSAGE_NEW_DATA) ra.notifyDataSetChanged();
+            else if(msg.what == MainActivityConstants.MESSAGE_NO_INTENT) makeDismissSnackbar(cl, R.string.no_intent, Snackbar.LENGTH_INDEFINITE);
         }
     };
 
     private final RecallableTimer timer = new RecallableTimer();
-    private final TimerTask timerTask = new TimerTask() {
-        @Override
-        public void run() {
-            Log.d("MainActivity/TimerTask", "Updating coin prices!");
-            l.clear();
-            l.addAll(d.getCoins(new ArrayList<>(Database.availableCoins)));
-            handler.sendEmptyMessage(1);
-        }
-    };
-
 
     private ArrayList<Comparator<CoinStruct>> spinnerFunctions() {
         var spinnerFunctions = new ArrayList<Comparator<CoinStruct>>();
@@ -58,7 +48,6 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         });
         spinnerFunctions.add(Comparator.comparingDouble(x -> x.latest));
         spinnerFunctions.add((x, y) -> Double.compare(y.latest, x.latest));
-
         return spinnerFunctions;
     }
 
@@ -73,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         cl = findViewById(R.id.mainCoordinatorLayout);
-        d = new Database();
 
         checkNetworkStatus = new NetworkBroadcast(this);
         currentNetworkState = true;
@@ -81,10 +69,12 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         l = new ArrayList<>();
         //for(CoinStruct cs : l) Log.d("MainActivity", cs.icon.toString());
 
-        ra = new MainRecyclerAdapter(l);
+        ra = new MainRecyclerAdapter(l, handler);
         rv = (RecyclerView) findViewById(R.id.rview);
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(ra);
+
+        var res = Database.getCoin("wow!");
 
         var spinnerValues = ArrayAdapter.createFromResource(this,
                 R.array.sort_by_options, android.R.layout.simple_spinner_item);
@@ -102,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
-                // wtf?
+                // do nothing -- keep the same sort
             }
         });
     }
@@ -113,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         super.onDestroy();
     }
 
-    private void makeDismissSnackbar(int stringid, int length) {
+    private void makeDismissSnackbar(CoordinatorLayout cl, int stringid, int length) {
         if(firstTime) {
             firstTime = false;
             return;
@@ -137,14 +127,22 @@ public class MainActivity extends AppCompatActivity implements BroadcastCompatAc
         currentNetworkState = b;
         switch(status) {
             case NetworkBroadcast.NO_NETWORK:
-                //Toast.makeText(this, "Internet appears to be down.", Toast.LENGTH_LONG).show();
                 Log.d("MainActivity/network", "Network is down");
-                makeDismissSnackbar(R.string.no_internet, Snackbar.LENGTH_INDEFINITE);
+                makeDismissSnackbar(cl, R.string.no_internet, Snackbar.LENGTH_INDEFINITE);
+                timer.cancel();
                 return;
             case NetworkBroadcast.YES_NETWORK:
                 Log.d("MainActivity/network", "Network is up, calling timer:");
-                makeDismissSnackbar(R.string.yes_internet, Snackbar.LENGTH_SHORT);
-                timer.schedule(timerTask, 0L, 5*MINUTE);
+                makeDismissSnackbar(cl, R.string.yes_internet, Snackbar.LENGTH_SHORT);
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        Log.d("MainActivity/TimerTask", "Updating coin prices!");
+                        l.clear();
+                        l.addAll(Database.getCoins(new ArrayList<>(Database.availableCoins)));
+                        handler.sendEmptyMessage(MainActivityConstants.MESSAGE_NEW_DATA);
+                    }
+                }, 0L, 5 * MINUTE);
                 return;
             default:
                 Log.d("MainActivity/onReceiveBroadcast", "Received invalid status code: " + status);
