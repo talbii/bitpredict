@@ -1,6 +1,6 @@
 # bitpredict - Android Project for Israel MOE
 
-This repository holds my Android project for the Israel MOE (minstery of education). This project by itself is valid for 5 pts. (יחידות לימוד).
+This repository holds my Android project for the Israel MOE (ministry of education). This project by itself is valid for 5 pts. (יחידות לימוד).
 
 ## Prediction Models
 
